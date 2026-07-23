@@ -1,5 +1,5 @@
-from RPLCD. i2c import CharLCD
-import smbus3
+from RPLCD.i2c import CharLCD
+from smbus3 import SMBus, i2c_msg
 import time
 
 lcd = CharLCD(
@@ -14,20 +14,24 @@ lcd = CharLCD(
     backlight_enabled=True
 )
 
-bus = smbus3. SMBus (1)
+while True:
+    with SMBus(1) as bus:
+        write = i2c_msg.write(0x44, [0x2C, 0x06])
+        bus.i2c_rdwr(write)
 
-bus.i2c_wr(0x44,[0x2C,0x06])
-time.sleep(0.5)
+        time.sleep(0.5)
 
-msg = bus.i2c_rd(0x44, 6)
-data = bytes(msg)
-bus.close
+        read = i2c_msg.read(0x44, 6)
+        bus.i2c_rdwr(read)
 
-temp = data[0] * 256 + data[1]
-cTemp = -45 + (175 * temp / 65535.0)
-humidity = 100 * (data[3] * 256 + data[4]) / 65535.0
+        data = list(read)
 
-lcd.write_string(f"Temperature in Celsius is : {cTemp:.2f}C")
-lcd.crlf()
-lcd.write_string(f"Relative Humidity is : {humidity:.2f} RH")
+    temp = data[0] * 256 + data[1]
+    cTemp = -45 + (175 * temp / 65535.0)
+    humidity = 100 * (data[3] * 256 + data[4]) / 65535.0
 
+    lcd.clear()
+    lcd.write_string(f"Temp:{cTemp:.2f} C")
+    lcd.cursor_pos = (1, 0)
+    lcd.write_string(f"Hum:{humidity:.2f}%")
+    time.sleep(0.5)
