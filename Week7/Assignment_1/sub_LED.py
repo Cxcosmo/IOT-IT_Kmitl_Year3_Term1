@@ -22,7 +22,7 @@ def on_message(client, userdata, msg):
 		GPIO.output(LIGHT, False)
 
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
-	client_id="panwit-sub",
+	client_id="67070066_sub",
 	protocol=mqtt.MQTTv5)
 
 mqttc.will_set(

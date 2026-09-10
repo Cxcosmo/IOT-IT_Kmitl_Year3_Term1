@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>IOT Dashboard</title>
+	<meta charset="UTF-8">
+
+	<link rel="stylesheet" type="text/css"
+		href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+	<link rel="stylesheet" type="text/css"
+		href="bower_components/snackbarjs/dist/snackbar.min.css">
+
+	<link rel="stylesheet" type="text/css"
+		href="bower_components/titatoggle/dist/titatoggle-dist-min.css">
+
+	<link rel="stylesheet" type="text/css"
+		href="bower_components/bootstrap-material-design/dist/css/roboto.min.css">
+
+	<link rel="stylesheet" type="text/css"
+		href="bower_components/bootstrap-material-design/dist/css/ripples.min.css">
+
+	<link rel="stylesheet" type="text/css"
+		href="bower_components/bootstrap-material-design/dist/css/material-fullpalette.min.css">
+
+	<style>
+		.led-container {
+			display: flex;
+			justify-content: center;
+			gap: 15px;
+			margin-top: 20px;
+		}
+
+		.led-button {
+			width: 120px;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div class="container" style="padding-top: 30px;">
+
+		<div class="text-center">
+
+			<h1>Publish Service</h1>
+
+			<div style="margin: 15px 0; font-size: 18px;">
+
+				<div>
+					<strong>Broker:</strong>
+					<span id="broker-name">-</span>
+				</div>
+
+				<div>
+					<strong>Topic:</strong>
+					<span id="topic-name">-</span>
+				</div>
+
+			</div>
+
+			<div style="margin: 15px 0;">
+				<span id="connection-status"
+					class="label label-danger"
+					style="font-size: 16px;">
+					Disconnected
+				</span>
+			</div>
+
+			<button class="btn btn-material-green-500"
+				id="connect-button">
+				Connect
+			</button>
+
+			<button class="btn btn-material-red-500"
+				id="disconnect-button"
+				disabled>
+				Disconnect
+			</button>
+
+			<hr>
+
+			<h3>Color LED Control</h3>
+
+			<div class="led-container">
+
+				<button
+					class="btn btn-material-grey-500 led-button"
+					id="red-button"
+					data-color="red">
+					RED OFF
+				</button>
+
+				<button
+					class="btn btn-material-grey-500 led-button"
+					id="green-button"
+					data-color="green">
+					GREEN OFF
+				</button>
+
+				<button
+					class="btn btn-material-grey-500 led-button"
+					id="blue-button"
+					data-color="blue">
+					BLUE OFF
+				</button>
+
+			</div>
+
+		</div>
+
+	</div>
+
+
+	<script type="text/javascript"
+		src="bower_components/jquery/dist/jquery.min.js">
+	</script>
+
+	<script src="mqttws31.js"
+		type="text/javascript">
+	</script>
+
+	<script type="text/javascript"
+		src="bower_components/bootstrap/dist/js/bootstrap.min.js">
+	</script>
+
+	<script type="text/javascript"
+		src="bower_components/snackbarjs/dist/snackbar.min.js">
+	</script>
+
+	<script type="text/javascript"
+		src="bower_components/bootstrap-material-design/dist/js/material.min.js">
+	</script>
+
+	<script type="text/javascript"
+		src="bower_components/bootstrap-material-design/dist/js/ripples.min.js">
+	</script>
+
+
+	<script type="text/javascript">
+
+		$(function () {
+
+			$.material.init();
+
+
+			// =========================
+			// MQTT
+			// =========================
+
+			var MQTTbroker = 'mqtt-dashboard.com';
+			var MQTTport = 8884;
+
+			var MQTTpublishTopic = '67070066/LED';
+
+
+			$('#broker-name').text(
+				MQTTbroker + ':' + MQTTport
+			);
+
+			$('#topic-name').text(
+				MQTTpublishTopic
+			);
+
+
+			var client = new Paho.MQTT.Client(
+				MQTTbroker,
+				MQTTport,
+				"myclientid_012" +
+				parseInt(Math.random() * 100, 10)
+			);
+
+
+			var isConnected = false;
+
+
+			// =========================
+			// LED STATUS
+			// =========================
+
+			var ledStatus = {
+				red: 0,
+				green: 0,
+				blue: 0
+			};
+
+
+			var statusShow =
+				document.getElementById('connection-status');
+
+			var connectButton =
+				document.getElementById('connect-button');
+
+			var disconnectButton =
+				document.getElementById('disconnect-button');
+
+
+			// =========================
+			// CONNECTION STATUS
+			// =========================
+
+			function updateConnectionStatus(connected, message) {
+
+				isConnected = connected;
+
+				$(statusShow).text(
+					message ||
+					(connected ? 'Connected' : 'Disconnected')
+				);
+
+				$(statusShow)
+					.toggleClass(
+						'label-success',
+						connected
+					)
+					.toggleClass(
+						'label-danger',
+						!connected
+					);
+
+				$(connectButton)
+					.prop('disabled', connected);
+
+				$(disconnectButton)
+					.prop('disabled', !connected);
+
+				$('.led-button')
+					.prop('disabled', !connected);
+			}
+
+
+			// =========================
+			// CONNECTION LOST
+			// =========================
+
+			client.onConnectionLost = function (responseObject) {
+
+				updateConnectionStatus(
+					false,
+					'Disconnected'
+				);
+
+				console.log(
+					"Connection lost: " +
+					responseObject.errorMessage
+				);
+			};
+
+
+			// =========================
+			// CONNECT MQTT
+			// =========================
+
+			function connectMQTT() {
+
+				updateConnectionStatus(
+					false,
+					'Connecting...'
+				);
+
+				var options = {
+
+					timeout: 3,
+
+					onSuccess: function () {
+
+						updateConnectionStatus(
+							true,
+							'Connected'
+						);
+
+						console.log(
+							"mqtt connected"
+						);
+					},
+
+					onFailure: function (message) {
+
+						updateConnectionStatus(
+							false,
+							'Connection Failed'
+						);
+
+						console.log(
+							"Connection failed, ERROR: " +
+							message.errorMessage
+						);
+					}
+				};
+
+				client.connect(options);
+			}
+
+
+			// =========================
+			// CONNECT BUTTON
+			// =========================
+
+			$(connectButton).click(function () {
+
+				if (!isConnected) {
+					connectMQTT();
+				}
+
+			});
+
+
+			// =========================
+			// DISCONNECT BUTTON
+			// =========================
+
+			$(disconnectButton).click(function () {
+
+				if (isConnected) {
+
+					client.disconnect();
+
+					updateConnectionStatus(
+						false,
+						'Disconnected'
+					);
+				}
+
+			});
+
+
+			// =========================
+			// LED BUTTON
+			// =========================
+
+			$('.led-button').click(function () {
+
+				if (!isConnected) {
+
+					$.snackbar({
+						content: 'Please Connect to MQTT Broker First'
+					});
+
+					return;
+				}
+
+				var color = $(this).data('color');
+
+
+				// Toggle ON / OFF
+				if (ledStatus[color] == 0) {
+
+					ledStatus[color] = 1;
+
+				} else {
+
+					ledStatus[color] = 0;
+
+				}
+
+
+				if (ledStatus[color] == 1) {
+
+					$(this)
+						.removeClass('btn-material-grey-500')
+						.addClass(
+							'btn-material-' +
+							color +
+							'-500'
+						);
+
+					$(this).text(
+						color.toUpperCase() + ' ON'
+					);
+
+				} else {
+
+					$(this)
+						.removeClass(
+							'btn-material-' +
+							color +
+							'-500'
+						)
+						.addClass(
+							'btn-material-grey-500'
+						);
+
+					$(this).text(
+						color.toUpperCase() + ' OFF'
+					);
+
+				}
+
+
+				// =========================
+				// Create JSON
+				// =========================
+
+				var payload =
+					JSON.stringify(ledStatus);
+
+
+				console.log(
+					"Publish:",
+					payload
+				);
+
+
+				// =========================
+				// MQTT MESSAGE
+				// =========================
+
+				var message =
+					new Paho.MQTT.Message(
+						payload
+					);
+
+				message.destinationName =
+					MQTTpublishTopic;
+
+				client.send(message);
+
+
+				$.snackbar({
+					content:
+						'Published: ' +
+						payload
+				});
+
+			});
+
+			$('.led-button')
+				.prop('disabled', true);
+
+		});
+
+	</script>
+
+</body>
+
+</html>
