@@ -3,8 +3,8 @@
 #include <coap-simple.h>
 
 // ===== ใส่ WiFi SSID, Password ของตัวเอง =====
-const char WIFI_SSID[] = "Net for cat";     // CHANGE TO YOUR WIFI SSID
-const char WIFI_PASSWORD[] = "Cat_Only";  // CHANGE TO YOUR WIFI PASSWORD
+const char WIFI_SSID[] = "";     // CHANGE TO YOUR WIFI SSID
+const char WIFI_PASSWORD[] = "";  // CHANGE TO YOUR WIFI PASSWORD
 
 // กำหนด IP ของ CoAP Server (จากตัวอย่างที่ 1)
 IPAddress serverIP(10, 210, 23, 245);   // <-- แก้ IP ให้ตรงกับ IP ของ CoAP Server

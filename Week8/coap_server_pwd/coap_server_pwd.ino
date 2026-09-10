@@ -3,8 +3,8 @@
 #include <coap-simple.h>
 
 // ===== WiFi =====
-const char WIFI_SSID[] = "Net for cat";
-const char WIFI_PASSWORD[] = "Cat_Only";
+const char WIFI_SSID[] = "";
+const char WIFI_PASSWORD[] = "";
 
 const uint16_t COAP_PORT = 5683;
 
